@@ -1,46 +1,83 @@
 const express = require("express");
+const dotenv = require("dotenv");
 const cors = require("cors");
-require("dotenv").config();
-if (!process.env.MONGO_URI) {
-    console.error("MONGO_URI is missing in .env file");
-    process.exit(1);
-}
+const http = require("http");
+const path = require("path");
 
-if (!process.env.PORT) {
-    console.warn("PORT is not defined. Using default port 5000.");
-}
+// Load environment variables
+dotenv.config();
 
 const connectDB = require("./config/db");
-const logger = require("./middleware/logger");
-const apiRoutes = require("./routes");
-const errorHandler = require("./middleware/errorMiddleware");
-const notFound = require("./middleware/notFound");
+const initSocket = require("./sockets/socket");
+const fileRoutes = require("./routes/fileRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const authRoutes = require("./routes/authRoutes");
 
+// Create Express app
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Create HTTP server
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io
+const io = initSocket(httpServer);
+
+// Make Socket.io available to controllers
+app.set("io", io);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(logger);
-app.use("/api", apiRoutes);
+app.use(express.urlencoded({ extended: true }));
 
-// Test route
+// Serve uploaded files
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
+// File upload API
+app.use("/api/files", fileRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/auth", authRoutes);
+
+
+// Basic test route
 app.get("/", (req, res) => {
-    res.json({
-        message: "Project Management Tool Backend is running!"
+  res.send("Project Management Tool Backend is running!");
+});
+
+// Server port
+const PORT = process.env.PORT || 5001;
+
+// Start server
+const startServer = async () => {
+  try {
+    // Try connecting to MongoDB
+    try {
+      await connectDB();
+    } catch (dbError) {
+      console.error(
+        "MongoDB connection failed:",
+        dbError.message
+      );
+
+      console.log(
+        "Starting server for Socket.io and file upload testing."
+      );
+    }
+
+    // Start Express and Socket.io
+    httpServer.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
-});
-// 404 middleware
-app.use(notFound);
-// Error handling middleware
-app.use(errorHandler);
 
-// Server
-const PORT = process.env.PORT || 5000;
+  } catch (error) {
+    console.error("Server startup error:", error.message);
+  }
+};
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+// Handle Socket.io connections through this server
+startServer();

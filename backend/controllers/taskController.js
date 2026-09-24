@@ -31,6 +31,13 @@ const createTask = async (req, res) => {
             deadline
         });
 
+        // Send real-time task creation event
+        const io = req.app.get("io");
+
+        if (io) {
+            io.to(`project-${project}`).emit("task-created", task);
+        }
+
         res.status(201).json({
             success: true,
             message: "Task created successfully",
@@ -107,6 +114,11 @@ const updateTask = async (req, res) => {
             });
         }
 
+        // Remember the old project in case the task is moved
+        const oldProjectId = task.project
+            ? task.project.toString()
+            : null;
+
         task.title = req.body.title ?? task.title;
         task.description = req.body.description ?? task.description;
         task.project = req.body.project ?? task.project;
@@ -116,6 +128,38 @@ const updateTask = async (req, res) => {
         task.deadline = req.body.deadline ?? task.deadline;
 
         await task.save();
+
+        // Send real-time task update event
+        const io = req.app.get("io");
+
+        if (io) {
+            const newProjectId = task.project
+                ? task.project.toString()
+                : null;
+
+            if (newProjectId) {
+                io.to(`project-${newProjectId}`).emit(
+                    "task-updated",
+                    task
+                );
+            }
+
+            // If the task was moved to another project,
+            // remove it from users in the old project.
+            if (
+                oldProjectId &&
+                newProjectId &&
+                oldProjectId !== newProjectId
+            ) {
+                io.to(`project-${oldProjectId}`).emit(
+                    "task-deleted",
+                    {
+                        taskId: task._id,
+                        projectId: oldProjectId
+                    }
+                );
+            }
+        }
 
         res.status(200).json({
             success: true,
@@ -143,7 +187,25 @@ const deleteTask = async (req, res) => {
             });
         }
 
+        // Save project ID before deleting the task
+        const projectId = task.project
+            ? task.project.toString()
+            : null;
+
         await task.deleteOne();
+
+        // Send real-time task deletion event
+        const io = req.app.get("io");
+
+        if (io && projectId) {
+            io.to(`project-${projectId}`).emit(
+                "task-deleted",
+                {
+                    taskId: task._id,
+                    projectId
+                }
+            );
+        }
 
         res.status(200).json({
             success: true,
