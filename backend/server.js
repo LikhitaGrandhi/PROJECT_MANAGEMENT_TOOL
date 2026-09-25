@@ -13,6 +13,9 @@ const fileRoutes = require("./routes/fileRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const authRoutes = require("./routes/authRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+const githubRoutes = require("./routes/githubRoutes");
 
 // Create Express app
 const app = express();
@@ -37,12 +40,14 @@ app.use(
   express.static(path.join(__dirname, "uploads"))
 );
 
-// File upload API
+// API routes
 app.use("/api/files", fileRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/github", githubRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {
