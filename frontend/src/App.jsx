@@ -1,31 +1,51 @@
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks.jsx";
-import "./App.css";
 import Kanban from "./pages/Kanban.jsx";
 import Files from "./pages/Files.jsx";
 import Reports from "./pages/Reports.jsx";
 import Settings from "./pages/Settings.jsx";
 
-function PlaceholderPage({ title }) {
-  return (
-    <div className="panel">
-      <h2>{title}</h2>
-      <p>This section is coming soon.</p>
-    </div>
-  );
+import "./App.css";
+
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 }
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Hide sidebar on login page
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login", { replace: true });
+  };
+
+  // Login page has no sidebar
   if (location.pathname === "/login") {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route
+          path="*"
+          element={<Navigate to="/login" replace />}
+        />
       </Routes>
     );
   }
@@ -127,60 +147,102 @@ function App() {
               <span>Team Member</span>
             </div>
           </div>
+
+          <button
+            className="logout-button"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="main-content">
         <Routes>
-          {/* Dashboard */}
+          {/* Root */}
           <Route
             path="/"
-            element={<Navigate to="/dashboard" replace />}
+            element={
+              <Navigate
+                to={
+                  localStorage.getItem("token")
+                    ? "/dashboard"
+                    : "/login"
+                }
+                replace
+              />
+            }
           />
 
+          {/* Protected pages */}
           <Route
             path="/dashboard"
-            element={<Dashboard />}
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
           />
 
-          {/* Projects */}
           <Route
             path="/projects"
-            element={<Projects />}
+            element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            }
           />
 
-          {/* Tasks */}
           <Route
             path="/tasks"
-            element={<Tasks />}
+            element={
+              <ProtectedRoute>
+                <Tasks />
+              </ProtectedRoute>
+            }
           />
 
-          {/* Other pages */}
           <Route
             path="/kanban"
-            element={<Kanban />}
+            element={
+              <ProtectedRoute>
+                <Kanban />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/files"
-            element={<Files />}
+            element={
+              <ProtectedRoute>
+                <Files />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/reports"
-            element={<Reports />}
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/settings"
-            element={<Settings />}
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
           />
 
           {/* Unknown routes */}
           <Route
             path="*"
-            element={<Navigate to="/dashboard" replace />}
+            element={<Navigate to="/" replace />}
           />
         </Routes>
       </main>
