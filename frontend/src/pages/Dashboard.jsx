@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 
 function Dashboard() {
+  const navigate = useNavigate();
+
   const [analytics, setAnalytics] = useState(null);
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -12,6 +15,12 @@ function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem("token");
+
+      // If token does not exist, go to login
+      if (!token) {
+        navigate("/login", { replace: true });
+        return;
+      }
 
       const [analyticsResponse, projectsResponse, tasksResponse] =
         await Promise.all([
@@ -38,6 +47,17 @@ function Dashboard() {
       const projectsData = await projectsResponse.json();
       const tasksData = await tasksResponse.json();
 
+      // Check for invalid or expired token
+      if (
+        analyticsResponse.status === 401 ||
+        projectsResponse.status === 401 ||
+        tasksResponse.status === 401
+      ) {
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+        return;
+      }
+
       if (!analyticsResponse.ok) {
         throw new Error(
           analyticsData.message || "Failed to fetch analytics"
@@ -61,6 +81,17 @@ function Dashboard() {
       setTasks(tasksData.tasks || []);
     } catch (error) {
       console.error("Dashboard error:", error);
+
+      // If the request itself fails because of authentication
+      if (
+        error.message?.toLowerCase().includes("unauthorized") ||
+        error.message?.toLowerCase().includes("invalid token")
+      ) {
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+        return;
+      }
+
       setError(error.message);
     } finally {
       setLoading(false);
@@ -103,6 +134,15 @@ function Dashboard() {
 
     const handleConnectError = (error) => {
       console.error("Socket error:", error.message);
+
+      // Handle socket authentication failure
+      if (
+        error.message?.toLowerCase().includes("unauthorized") ||
+        error.message?.toLowerCase().includes("invalid token")
+      ) {
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+      }
     };
 
     socket.on("task-created", handleTaskCreated);
@@ -120,7 +160,7 @@ function Dashboard() {
       socket.off("task-deleted", handleTaskDeleted);
       socket.off("connect_error", handleConnectError);
     };
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -142,8 +182,10 @@ function Dashboard() {
 
   const totalProjects = analytics?.totalProjects || 0;
   const totalTasks = analytics?.totalTasks || 0;
+
   const completedTasks =
     analytics?.taskStats?.completedTasks || 0;
+
   const inProgressTasks =
     analytics?.taskStats?.inProgressTasks || 0;
 
@@ -346,8 +388,6 @@ function Dashboard() {
           ))}
         </section>
       )}
-
-      
     </>
   );
 }
