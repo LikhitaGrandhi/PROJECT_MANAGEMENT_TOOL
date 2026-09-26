@@ -9,6 +9,7 @@ import {
 
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Projects from "./pages/Projects";
 import Tasks from "./pages/Tasks.jsx";
 import Kanban from "./pages/Kanban.jsx";
@@ -18,6 +19,10 @@ import Settings from "./pages/Settings.jsx";
 
 import "./App.css";
 
+
+// ===============================
+// Protected Route
+// ===============================
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -28,20 +33,43 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+
+// ===============================
+// Main App
+// ===============================
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ===============================
+  // Logout
+  // ===============================
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login", { replace: true });
   };
 
-  // Login page has no sidebar
-  if (location.pathname === "/login") {
+
+  // ===============================
+  // Authentication Pages
+  // No Sidebar
+  // ===============================
+  if (
+    location.pathname === "/login" ||
+    location.pathname === "/register"
+  ) {
     return (
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
         <Route
           path="*"
           element={<Navigate to="/login" replace />}
@@ -50,16 +78,29 @@ function App() {
     );
   }
 
+
+  // ===============================
+  // Main Application
+  // ===============================
   return (
     <div className="app-shell">
-      {/* Sidebar */}
+
+      {/* =================================
+          Sidebar
+      ================================= */}
       <aside className="sidebar">
+
+        {/* Brand */}
         <div className="sidebar-brand">
           <h1>ProjectFlow</h1>
           <p>Project Management</p>
         </div>
 
+
+        {/* Navigation */}
         <nav className="sidebar-nav">
+
+          {/* Dashboard */}
           <Link
             to="/dashboard"
             className={
@@ -71,6 +112,8 @@ function App() {
             Dashboard
           </Link>
 
+
+          {/* Projects */}
           <Link
             to="/projects"
             className={
@@ -82,6 +125,8 @@ function App() {
             Projects
           </Link>
 
+
+          {/* Tasks */}
           <Link
             to="/tasks"
             className={
@@ -93,6 +138,8 @@ function App() {
             Tasks
           </Link>
 
+
+          {/* Kanban */}
           <Link
             to="/kanban"
             className={
@@ -104,6 +151,8 @@ function App() {
             Kanban
           </Link>
 
+
+          {/* Files */}
           <Link
             to="/files"
             className={
@@ -115,6 +164,8 @@ function App() {
             Files
           </Link>
 
+
+          {/* Reports */}
           <Link
             to="/reports"
             className={
@@ -125,9 +176,16 @@ function App() {
           >
             Reports
           </Link>
+
         </nav>
 
+
+        {/* =================================
+            Sidebar Bottom
+        ================================= */}
         <div className="sidebar-bottom">
+
+          {/* Settings */}
           <Link
             to="/settings"
             className={
@@ -139,28 +197,45 @@ function App() {
             Settings
           </Link>
 
+
+          {/* User */}
           <div className="sidebar-user">
-            <div className="user-avatar">D</div>
+
+            <div className="user-avatar">
+              D
+            </div>
 
             <div>
               <strong>Deepika</strong>
               <span>Team Member</span>
             </div>
+
           </div>
 
+
+          {/* Logout */}
           <button
             className="logout-button"
             onClick={handleLogout}
           >
             Logout
           </button>
+
         </div>
+
       </aside>
 
-      {/* Main Content */}
+
+      {/* =================================
+          Main Content
+      ================================= */}
       <main className="main-content">
+
         <Routes>
-          {/* Root */}
+
+          {/* =================================
+              Root Route
+          ================================= */}
           <Route
             path="/"
             element={
@@ -175,7 +250,28 @@ function App() {
             }
           />
 
-          {/* Protected pages */}
+
+          {/* =================================
+              Login
+          ================================= */}
+          <Route
+            path="/login"
+            element={<Login />}
+          />
+
+
+          {/* =================================
+              Register
+          ================================= */}
+          <Route
+            path="/register"
+            element={<Register />}
+          />
+
+
+          {/* =================================
+              Dashboard
+          ================================= */}
           <Route
             path="/dashboard"
             element={
@@ -185,6 +281,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Projects
+          ================================= */}
           <Route
             path="/projects"
             element={
@@ -194,6 +294,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Tasks
+          ================================= */}
           <Route
             path="/tasks"
             element={
@@ -203,6 +307,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Kanban
+          ================================= */}
           <Route
             path="/kanban"
             element={
@@ -212,6 +320,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Files
+          ================================= */}
           <Route
             path="/files"
             element={
@@ -221,6 +333,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Reports
+          ================================= */}
           <Route
             path="/reports"
             element={
@@ -230,6 +346,10 @@ function App() {
             }
           />
 
+
+          {/* =================================
+              Settings
+          ================================= */}
           <Route
             path="/settings"
             element={
@@ -239,13 +359,19 @@ function App() {
             }
           />
 
-          {/* Unknown routes */}
+
+          {/* =================================
+              Unknown Route
+          ================================= */}
           <Route
             path="*"
             element={<Navigate to="/" replace />}
           />
+
         </Routes>
+
       </main>
+
     </div>
   );
 }
